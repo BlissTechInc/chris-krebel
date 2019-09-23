@@ -1,0 +1,76 @@
+version: '3.7'
+
+
+
+services:
+
+  nginx:
+    image: nginx
+    container_name: kinkrebel-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src/:/var/www
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - laravel
+    tty: true
+
+
+
+  mysql:
+    image: mysql:5.7.22
+    container_name: kinkrebel-mysql
+    #volumes:
+      # - dbdata:/var/lib/mysql
+      # if you want a cust mysql config file
+      # ./mysql/my.cnf:/etc/mysql/my.cnf
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: kinkrebel
+      MYSQL_USER: kruser
+      MYSQL_PASSWORD: krpass
+      MYSQL_ROOT_PASSWORD: krrootpass
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - laravel
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kinkrebel-php
+    working_dir: /var/www
+    volumes:
+      - ./src/:/var/www
+    ports:
+      - "9000:9000"
+    networks:
+      - laravel
+    expose:
+      - "9000"
+    links:
+      - mysql
+    environment:
+      - DB_PORT=3306
+      - DB_HOST=mysql
+
+
+
+
+networks:
+  laravel:
+    driver: bridge
+
+
+#Volumes
+volumes:
+  dbdata:
+    driver: local
